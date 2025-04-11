@@ -150,7 +150,10 @@ resource "aws_lb" "more_final_alb" {
   name               = "more-final-alb"
   load_balancer_type = "application"
   security_groups    = [aws_security_group.more_final_alb_sg.id]
-  subnets            = [aws_subnet.more_final_pub_subnet_a.id, aws_subnet.more_final_pub_subnet_b.id]
+  subnets            = [
+    aws_subnet.more_final_pub_subnet_a.id,
+    aws_subnet.more_final_pub_subnet_b.id
+  ]
 
   tags = {
     Name = "more-final-alb"
@@ -195,7 +198,7 @@ resource "aws_lb_listener" "more_final_listener" {
 ###############################################################################
 # Section 5: IAM Roles
 ###############################################################################
-# Create ECS Task Role (since one doesn't exist yet)
+# Create ECS Task Role (import if it already exists)
 resource "aws_iam_role" "more_final_ecs_task_role" {
   name = "more-final-ecs-task-role"
 
@@ -204,10 +207,8 @@ resource "aws_iam_role" "more_final_ecs_task_role" {
     Statement = [
       {
         Effect    = "Allow",
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        },
-        Action = "sts:AssumeRole"
+        Principal = { Service = "ecs-tasks.amazonaws.com" },
+        Action    = "sts:AssumeRole"
       }
     ]
   })
@@ -228,16 +229,7 @@ resource "aws_ecs_cluster" "more_final_ecs_cluster" {
   }
 }
 
-# Create ECR repository for your container image
-resource "aws_ecr_repository" "more_final_api" {
-  name                 = "more-final-api"
-  image_tag_mutability = "MUTABLE"
-
-  tags = {
-    Name = "more-final-api"
-  }
-}
-
+# Note: The ECR repository is created externally. Therefore, the image is referenced via a variable.
 resource "aws_ecs_task_definition" "more_final_task_def" {
   family                   = "more-final-task"
   network_mode             = "awsvpc"
@@ -248,7 +240,7 @@ resource "aws_ecs_task_definition" "more_final_task_def" {
   container_definitions = jsonencode([
     {
       name         = "more-api-container",
-      image        = "${aws_ecr_repository.more_final_api.repository_url}:latest",
+      image        = var.api_container_image,
       essential    = true,
       portMappings = [
         {
