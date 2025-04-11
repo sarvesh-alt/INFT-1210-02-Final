@@ -25,7 +25,7 @@ variable "aws_account_id" {
 variable "api_container_image" {
   description = "Docker image URI in ECR for the final API"
   type        = string
-  default     = ""
+  default     = ""  # Not required if using the ECR repository output
 }
 
 variable "ecs_execution_role_arn" {

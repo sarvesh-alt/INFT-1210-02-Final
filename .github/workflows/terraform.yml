@@ -14,11 +14,10 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-
-      - name: List Files for Debug
+      
+      - name: List Files (Debug)
         run: ls -la
-
-      # Optionally, upload the source as an artifact so other jobs can use it
+      
       - name: Upload Source Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -50,7 +49,7 @@ jobs:
         run: |
           echo "Building Docker image..."
           docker build -t more_final .
-
+      
       - name: Tag Docker Image
         env:
           AWS_REGION: ca-central-1
@@ -58,7 +57,7 @@ jobs:
         run: |
           echo "Tagging Docker image..."
           docker tag more_final:latest $AWS_ACCOUNT_ID.dkr.ecr.ca-central-1.amazonaws.com/more-final-api:latest
-
+      
       - name: Push Docker Image to ECR
         env:
           AWS_REGION: ca-central-1
@@ -77,39 +76,38 @@ jobs:
         with:
           name: source-code
 
-      - name: Checkout Repository (Alternative to download artifact)
-        # If you prefer to simply check out the repo again, you can use the checkout action:
+      - name: Checkout Repository (Alternative)
         uses: actions/checkout@v3
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: "1.0.11"  # Update as needed
-
+          terraform_version: "1.0.11"
+      
       - name: Terraform Validate
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: "ca-central-1"
+          AWS_REGION: ca-central-1
         run: terraform validate
-
+      
       - name: Terraform Init
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: "ca-central-1"
+          AWS_REGION: ca-central-1
         run: terraform init
-
+      
       - name: Terraform Plan
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: "ca-central-1"
+          AWS_REGION: ca-central-1
         run: terraform plan -out=tfplan
-
+      
       - name: Terraform Apply
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: "ca-central-1"
+          AWS_REGION: ca-central-1
         run: terraform apply -auto-approve tfplan
