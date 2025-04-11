@@ -33,7 +33,7 @@ resource "aws_subnet" "morefinal_pub_subnet_a" {
 # Second public subnet for ALB (Availability Zone B)
 resource "aws_subnet" "morefinal_pub_subnet_b" {
   vpc_id                  = aws_vpc.morefinal_vpc.id
-  cidr_block              = "10.0.3.0/24"
+  cidr_block              = "10.0.3.0/24"  # Ensure CIDR blocks do not overlap with others in the VPC.
   availability_zone       = var.availability_zone_b
   map_public_ip_on_launch = true
 
@@ -42,7 +42,7 @@ resource "aws_subnet" "morefinal_pub_subnet_b" {
   }
 }
 
-# Private Subnet for ECS tasks
+# Private subnet for ECS tasks
 resource "aws_subnet" "morefinal_priv_subnet" {
   vpc_id            = aws_vpc.morefinal_vpc.id
   cidr_block        = "10.0.2.0/24"
@@ -89,7 +89,7 @@ resource "aws_route_table_association" "morefinal_pub_assoc_b" {
 ###############################################################################
 # Section 3: Security Groups
 ###############################################################################
-# Security Group for ALB (allows HTTP inbound)
+# Security Group for ALB – allows HTTP inbound
 resource "aws_security_group" "morefinal_alb_sg" {
   name        = "morefinal-alb-sg"
   description = "Security group for ALB"
@@ -116,7 +116,7 @@ resource "aws_security_group" "morefinal_alb_sg" {
   }
 }
 
-# Security Group for ECS tasks (restricts inbound to only traffic from ALB on port 5000)
+# Security Group for ECS tasks – restrict inbound to traffic from ALB on port 5000
 resource "aws_security_group" "morefinal_ecs_sg" {
   name        = "morefinal-ecs-sg"
   description = "Security group for ECS tasks (Fargate)"
@@ -150,10 +150,7 @@ resource "aws_lb" "morefinal_alb" {
   name               = "morefinal-alb"
   load_balancer_type = "application"
   security_groups    = [aws_security_group.morefinal_alb_sg.id]
-  subnets            = [
-    aws_subnet.morefinal_pub_subnet_a.id,
-    aws_subnet.morefinal_pub_subnet_b.id
-  ]
+  subnets            = [aws_subnet.morefinal_pub_subnet_a.id, aws_subnet.morefinal_pub_subnet_b.id]
 
   tags = {
     Name = "morefinal-alb"
@@ -229,13 +226,13 @@ resource "aws_ecs_cluster" "morefinal_ecs_cluster" {
   }
 }
 
-# The ECR repository is now managed outside Terraform. Reference the image via a variable.
+# Reference externally created ECR repository by using a variable for the image URI.
 resource "aws_ecs_task_definition" "morefinal_task_def" {
   family                   = "morefinal-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"  # 0.25 vCPU
-  memory                   = "512"  # 512 MB
+  cpu                      = "256"   # 0.25 vCPU
+  memory                   = "512"   # 512 MB
 
   container_definitions = jsonencode([
     {
