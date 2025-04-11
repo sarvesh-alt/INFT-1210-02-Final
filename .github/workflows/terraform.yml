@@ -18,9 +18,9 @@ jobs:
       - name: List Files (Debug)
         run: ls -la
       
-      # Use version 2 for the upload artifact action instead of v3
       - name: Upload Source Artifact
-        uses: actions/upload-artifact@v2
+        id: upload
+        uses: actions/upload-artifact@v3
         with:
           name: source-code
           path: .
@@ -30,14 +30,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: source
     steps:
-      # Use version 2 for the download artifact action instead of v3
       - name: Download Source Artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: source-code
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
 
       - name: Login to AWS ECR
         env:
@@ -73,44 +79,31 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      # Use version 2 for the download artifact action
       - name: Download Source Artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: source-code
 
-      - name: Checkout Repository (Alternative)
-        uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: "1.0.11"
       
-      - name: Terraform Validate
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ca-central-1
-        run: terraform validate
-      
       - name: Terraform Init
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ca-central-1
         run: terraform init
       
+      - name: Terraform Validate
+        run: terraform validate
+      
       - name: Terraform Plan
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ca-central-1
         run: terraform plan -out=tfplan
       
       - name: Terraform Apply
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ca-central-1
         run: terraform apply -auto-approve tfplan
