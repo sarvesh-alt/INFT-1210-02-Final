@@ -18,15 +18,27 @@ resource "aws_vpc" "more_vpc" {
   }
 }
 
-# Public Subnet for ALB
-resource "aws_subnet" "more_pub_subnet" {
+# Primary public subnet for ALB (Availability Zone A)
+resource "aws_subnet" "more_pub_subnet_a" {
   vpc_id                  = aws_vpc.more_vpc.id
   cidr_block              = "10.0.1.0/24"
   availability_zone       = var.availability_zone
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "more-pub-subnet"
+    Name = "more-pub-subnet-a"
+  }
+}
+
+# Second public subnet for ALB (Availability Zone B)
+resource "aws_subnet" "more_pub_subnet_b" {
+  vpc_id                  = aws_vpc.more_vpc.id
+  cidr_block              = "10.0.3.0/24"   # Ensure CIDR blocks do not overlap with others in the VPC
+  availability_zone       = var.availability_zone_b
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "more-pub-subnet-b"
   }
 }
 
@@ -41,7 +53,7 @@ resource "aws_subnet" "more_priv_subnet" {
   }
 }
 
-# Internet Gateway for public subnet
+# Internet Gateway for public subnets
 resource "aws_internet_gateway" "more_igw" {
   vpc_id = aws_vpc.more_vpc.id
 
@@ -50,7 +62,7 @@ resource "aws_internet_gateway" "more_igw" {
   }
 }
 
-# Route Table for public subnet
+# Route Table for public subnets
 resource "aws_route_table" "more_pub_rt" {
   vpc_id = aws_vpc.more_vpc.id
 
@@ -64,15 +76,20 @@ resource "aws_route_table" "more_pub_rt" {
   }
 }
 
-resource "aws_route_table_association" "more_pub_assoc" {
-  subnet_id      = aws_subnet.more_pub_subnet.id
+resource "aws_route_table_association" "more_pub_assoc_a" {
+  subnet_id      = aws_subnet.more_pub_subnet_a.id
+  route_table_id = aws_route_table.more_pub_rt.id
+}
+
+resource "aws_route_table_association" "more_pub_assoc_b" {
+  subnet_id      = aws_subnet.more_pub_subnet_b.id
   route_table_id = aws_route_table.more_pub_rt.id
 }
 
 ###############################################################################
 # Section 3: Security Groups
 ###############################################################################
-# Security Group for ALB (allows HTTP inbound)
+# ALB Security Group – allows HTTP inbound
 resource "aws_security_group" "more_alb_sg" {
   name        = "more-alb-sg"
   description = "Security group for ALB"
@@ -85,7 +102,7 @@ resource "aws_security_group" "more_alb_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   egress {
     description = "Allow all outbound"
     from_port   = 0
@@ -99,7 +116,7 @@ resource "aws_security_group" "more_alb_sg" {
   }
 }
 
-# Security Group for ECS tasks (only allow inbound from ALB on port 5000)
+# ECS Security Group – restrict inbound to only traffic from ALB on port 5000
 resource "aws_security_group" "more_ecs_sg" {
   name        = "more-ecs-sg"
   description = "Security group for ECS tasks (Fargate)"
@@ -130,10 +147,10 @@ resource "aws_security_group" "more_ecs_sg" {
 # Section 4: Application Load Balancer & Target Group
 ###############################################################################
 resource "aws_lb" "more_alb" {
-  name               = "more-alb"  # Updated: using hyphens instead of underscores
+  name               = "more-alb"
   load_balancer_type = "application"
   security_groups    = [aws_security_group.more_alb_sg.id]
-  subnets            = [aws_subnet.more_pub_subnet.id]
+  subnets            = [aws_subnet.more_pub_subnet_a.id, aws_subnet.more_pub_subnet_b.id]
 
   tags = {
     Name = "more-alb"
@@ -141,7 +158,7 @@ resource "aws_lb" "more_alb" {
 }
 
 resource "aws_lb_target_group" "more_tg" {
-  name     = "more-tg"  # Updated: using hyphens instead of underscores
+  name     = "more-tg"
   port     = 5000
   protocol = "HTTP"
   vpc_id   = aws_vpc.more_vpc.id
@@ -178,7 +195,7 @@ resource "aws_lb_listener" "more_listener" {
 ###############################################################################
 # Section 5: IAM Roles
 ###############################################################################
-# ECS Task Role (created because you don't have one)
+# Create ECS Task Role (since one doesn't exist yet)
 resource "aws_iam_role" "more_ecs_task_role" {
   name = "more-ecs-task-role"
 
@@ -186,7 +203,7 @@ resource "aws_iam_role" "more_ecs_task_role" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect = "Allow",
+        Effect    = "Allow",
         Principal = {
           Service = "ecs-tasks.amazonaws.com"
         },
@@ -242,7 +259,7 @@ resource "aws_ecs_task_definition" "more_task_def" {
       environment = [
         {
           name  = "WELCOME_MESSAGE",
-          value = "Welcome to more Final Test API Server" 
+          value = "Welcome to more Final Test API Server"
         }
       ]
     }

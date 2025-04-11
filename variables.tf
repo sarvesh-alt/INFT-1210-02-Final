@@ -5,9 +5,15 @@ variable "region" {
 }
 
 variable "availability_zone" {
-  description = "AWS Availability Zone"
+  description = "Primary AWS Availability Zone"
   type        = string
   default     = "ca-central-1a"
+}
+
+variable "availability_zone_b" {
+  description = "Second AWS Availability Zone"
+  type        = string
+  default     = "ca-central-1b"
 }
 
 variable "aws_account_id" {
@@ -19,13 +25,11 @@ variable "aws_account_id" {
 variable "api_container_image" {
   description = "Docker image URI in ECR for the final API"
   type        = string
-  default     = ""  # Not required if using the ECR repository output
+  default     = ""
 }
 
 variable "ecs_execution_role_arn" {
   description = "IAM role ARN for ECS task execution"
   type        = string
-  default     = "arn:aws:iam::615299769322:role/ecsTaskExecutionRole"  # Update if your role name is different
+  default     = "arn:aws:iam::615299769322:role/ecsTaskExecutionRole"
 }
-
-# The ecs_task_role is now created by Terraform in main.tf.
