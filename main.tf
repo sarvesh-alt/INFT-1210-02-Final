@@ -2,7 +2,7 @@
 # Section 1: Provider
 ###############################################################################
 provider "aws" {
-  region = "ca-central-1"
+  region = var.region
 }
 
 ###############################################################################
@@ -14,7 +14,7 @@ resource "aws_vpc" "more_vpc" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "more_vpc"
+    Name = "more-vpc"
   }
 }
 
@@ -26,7 +26,7 @@ resource "aws_subnet" "more_pub_subnet" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "more_pub_subnet"
+    Name = "more-pub-subnet"
   }
 }
 
@@ -37,7 +37,7 @@ resource "aws_subnet" "more_priv_subnet" {
   availability_zone = var.availability_zone
 
   tags = {
-    Name = "more_priv_subnet"
+    Name = "more-priv-subnet"
   }
 }
 
@@ -46,7 +46,7 @@ resource "aws_internet_gateway" "more_igw" {
   vpc_id = aws_vpc.more_vpc.id
 
   tags = {
-    Name = "more_igw"
+    Name = "more-igw"
   }
 }
 
@@ -60,7 +60,7 @@ resource "aws_route_table" "more_pub_rt" {
   }
 
   tags = {
-    Name = "more_pub_rt"
+    Name = "more-pub-rt"
   }
 }
 
@@ -74,7 +74,7 @@ resource "aws_route_table_association" "more_pub_assoc" {
 ###############################################################################
 # Security Group for ALB (allows HTTP inbound)
 resource "aws_security_group" "more_alb_sg" {
-  name        = "more_alb_sg"
+  name        = "more-alb-sg"
   description = "Security group for ALB"
   vpc_id      = aws_vpc.more_vpc.id
 
@@ -95,13 +95,13 @@ resource "aws_security_group" "more_alb_sg" {
   }
 
   tags = {
-    Name = "more_alb_sg"
+    Name = "more-alb-sg"
   }
 }
 
 # Security Group for ECS tasks (only allow inbound from ALB on port 5000)
 resource "aws_security_group" "more_ecs_sg" {
-  name        = "more_ecs_sg"
+  name        = "more-ecs-sg"
   description = "Security group for ECS tasks (Fargate)"
   vpc_id      = aws_vpc.more_vpc.id
 
@@ -122,7 +122,7 @@ resource "aws_security_group" "more_ecs_sg" {
   }
 
   tags = {
-    Name = "more_ecs_sg"
+    Name = "more-ecs-sg"
   }
 }
 
@@ -130,18 +130,18 @@ resource "aws_security_group" "more_ecs_sg" {
 # Section 4: Application Load Balancer & Target Group
 ###############################################################################
 resource "aws_lb" "more_alb" {
-  name               = "more_alb"
+  name               = "more-alb"  # Updated: using hyphens instead of underscores
   load_balancer_type = "application"
   security_groups    = [aws_security_group.more_alb_sg.id]
   subnets            = [aws_subnet.more_pub_subnet.id]
 
   tags = {
-    Name = "more_alb"
+    Name = "more-alb"
   }
 }
 
 resource "aws_lb_target_group" "more_tg" {
-  name     = "more_tg"
+  name     = "more-tg"  # Updated: using hyphens instead of underscores
   port     = 5000
   protocol = "HTTP"
   vpc_id   = aws_vpc.more_vpc.id
@@ -156,7 +156,7 @@ resource "aws_lb_target_group" "more_tg" {
   }
 
   tags = {
-    Name = "more_tg"
+    Name = "more-tg"
   }
 }
 
@@ -171,16 +171,16 @@ resource "aws_lb_listener" "more_listener" {
   }
 
   tags = {
-    Name = "more_http_listener"
+    Name = "more-http-listener"
   }
 }
 
 ###############################################################################
 # Section 5: IAM Roles
 ###############################################################################
-# ECS Task Role (created because you mentioned you don't have one)
+# ECS Task Role (created because you don't have one)
 resource "aws_iam_role" "more_ecs_task_role" {
-  name = "more_ecs_task_role"
+  name = "more-ecs-task-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -196,26 +196,18 @@ resource "aws_iam_role" "more_ecs_task_role" {
   })
 
   tags = {
-    Name = "more_ecs_task_role"
+    Name = "more-ecs-task-role"
   }
 }
-
-# (Optional) You can attach additional policies to this role if your container needs to access AWS resources.
-# For example:
-# resource "aws_iam_policy_attachment" "more_ecs_task_role_policy" {
-#   name       = "more_ecs_task_role_policy_attachment"
-#   roles      = [aws_iam_role.more_ecs_task_role.name]
-#   policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
-# }
 
 ###############################################################################
 # Section 6: ECS Cluster, Task Definition, and Service (Fargate)
 ###############################################################################
 resource "aws_ecs_cluster" "more_ecs_cluster" {
-  name = "more_ecs_cluster"
+  name = "more-ecs-cluster"
 
   tags = {
-    Name = "more_ecs_cluster"
+    Name = "more-ecs-cluster"
   }
 }
 
@@ -225,12 +217,12 @@ resource "aws_ecr_repository" "more_final_api" {
   image_tag_mutability = "MUTABLE"
 
   tags = {
-    Name = "more_final_api"
+    Name = "more-final-api"
   }
 }
 
 resource "aws_ecs_task_definition" "more_task_def" {
-  family                   = "more_final_task"
+  family                   = "more-final-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"  # 0.25 vCPU
@@ -238,7 +230,7 @@ resource "aws_ecs_task_definition" "more_task_def" {
 
   container_definitions = jsonencode([
     {
-      name         = "more_api_container",
+      name         = "more-api-container",
       image        = "${aws_ecr_repository.more_final_api.repository_url}:latest",
       essential    = true,
       portMappings = [
@@ -250,7 +242,7 @@ resource "aws_ecs_task_definition" "more_task_def" {
       environment = [
         {
           name  = "WELCOME_MESSAGE",
-          value = "Welcome to more Final Test API Server"
+          value = "Welcome to more Final Test API Server" 
         }
       ]
     }
@@ -260,12 +252,12 @@ resource "aws_ecs_task_definition" "more_task_def" {
   task_role_arn      = aws_iam_role.more_ecs_task_role.arn
 
   tags = {
-    Name = "more_task_def"
+    Name = "more-task-def"
   }
 }
 
 resource "aws_ecs_service" "more_ecs_service" {
-  name            = "more_ecs_service"
+  name            = "more-ecs-service"
   cluster         = aws_ecs_cluster.more_ecs_cluster.id
   task_definition = aws_ecs_task_definition.more_task_def.arn
   launch_type     = "FARGATE"
@@ -279,7 +271,7 @@ resource "aws_ecs_service" "more_ecs_service" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.more_tg.arn
-    container_name   = "more_api_container"
+    container_name   = "more-api-container"
     container_port   = 5000
   }
 
@@ -289,7 +281,7 @@ resource "aws_ecs_service" "more_ecs_service" {
   depends_on = [aws_lb_listener.more_listener]
 
   tags = {
-    Name = "more_ecs_service"
+    Name = "more-ecs-service"
   }
 }
 
@@ -305,7 +297,7 @@ resource "aws_appautoscaling_target" "more_ecs_asg_target" {
 }
 
 resource "aws_appautoscaling_policy" "more_ecs_asg_scale_out" {
-  name               = "more_ecs_scale_out"
+  name               = "more-ecs-scale-out"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.more_ecs_asg_target.resource_id
   scalable_dimension = aws_appautoscaling_target.more_ecs_asg_target.scalable_dimension
@@ -322,7 +314,7 @@ resource "aws_appautoscaling_policy" "more_ecs_asg_scale_out" {
 }
 
 resource "aws_appautoscaling_policy" "more_ecs_asg_scale_in" {
-  name               = "more_ecs_scale_in"
+  name               = "more-ecs-scale-in"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.more_ecs_asg_target.resource_id
   scalable_dimension = aws_appautoscaling_target.more_ecs_asg_target.scalable_dimension
