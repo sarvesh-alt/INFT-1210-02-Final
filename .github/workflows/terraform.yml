@@ -29,7 +29,7 @@ jobs:
     needs: source
     steps:
       - name: Download Source Artifact
-        uses: actions/download-artifact@v4.6.2
+        uses: actions/download-artifact@v4.2.1
         with:
           name: source-code
 
@@ -84,7 +84,7 @@ jobs:
     needs: build
     steps:
       - name: Download Source Artifact
-        uses: actions/download-artifact@v4.6.2
+        uses: actions/download-artifact@v4.2.1
         with:
           name: source-code
 
