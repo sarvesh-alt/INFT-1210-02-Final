@@ -3,7 +3,7 @@ name: Terraform Infra Deployment
 on:
   push:
     branches:
-      - main  # Change if needed
+      - main  # Change this if you use a different branch
 
 jobs:
   terraform:
@@ -13,23 +13,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: List Files
-        run: ls -la
-
-      - name: Debug TF_VAR_region
-        run: echo "TF_VAR_region=$TF_VAR_region"
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: "1.0.11"
-
-      - name: Terraform Validate
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: "ca-central-1"
-        run: terraform validate
+          terraform_version: "1.0.11"  # Update as needed
 
       - name: Terraform Init
         env:
@@ -38,6 +25,13 @@ jobs:
           AWS_REGION: "ca-central-1"
         run: terraform init
 
+      - name: Terraform Validate
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: "ca-central-1"
+        run: terraform validate
+        
       - name: Terraform Plan
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
