@@ -337,3 +337,72 @@ resource "aws_appautoscaling_policy" "finalmore_ecs_asg_scale_in" {
     scale_in_cooldown  = 120
   }
 }
+
+# Create a route table for private subnet
+resource "aws_route_table" "finalmore_priv_rt" {
+  vpc_id = aws_vpc.finalmore_vpc.id
+
+  tags = {
+    Name = "final-more-priv-rt"
+  }
+}
+
+# Associate the private route table with the private subnet
+resource "aws_route_table_association" "finalmore_priv_assoc" {
+  subnet_id      = aws_subnet.finalmore_priv_subnet.id
+  route_table_id = aws_route_table.finalmore_priv_rt.id
+}
+
+# ECR API VPC Endpoint
+resource "aws_vpc_endpoint" "finalmore_ecr_api" {
+  vpc_id              = aws_vpc.finalmore_vpc.id
+  service_name        = "com.amazonaws.${var.region}.ecr.api"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.finalmore_priv_subnet.id]
+  security_group_ids  = [aws_security_group.finalmore_ecs_sg.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "final-more-ecr-api-endpoint"
+  }
+}
+
+# ECR Docker VPC Endpoint
+resource "aws_vpc_endpoint" "finalmore_ecr_dkr" {
+  vpc_id              = aws_vpc.finalmore_vpc.id
+  service_name        = "com.amazonaws.${var.region}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.finalmore_priv_subnet.id]
+  security_group_ids  = [aws_security_group.finalmore_ecs_sg.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "final-more-ecr-dkr-endpoint"
+  }
+}
+
+# S3 Gateway Endpoint (needed for ECR to work properly)
+resource "aws_vpc_endpoint" "finalmore_s3" {
+  vpc_id            = aws_vpc.finalmore_vpc.id
+  service_name      = "com.amazonaws.${var.region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.finalmore_priv_rt.id]
+
+  tags = {
+    Name = "final-more-s3-endpoint"
+  }
+}
+
+# VPC Endpoint for AWS Logs (needed for container logging)
+resource "aws_vpc_endpoint" "finalmore_logs" {
+  vpc_id              = aws_vpc.finalmore_vpc.id
+  service_name        = "com.amazonaws.${var.region}.logs"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.finalmore_priv_subnet.id]
+  security_group_ids  = [aws_security_group.finalmore_ecs_sg.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "final-more-logs-endpoint"
+  }
+}
