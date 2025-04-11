@@ -8,7 +8,7 @@ provider "aws" {
 ###############################################################################
 # Section 2: Networking (VPC, Subnets, IGW, Route Tables)
 ###############################################################################
-resource "aws_vpc" "final_more_vpc" {
+resource "aws_vpc" "finalmore_vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
   enable_dns_hostnames = true
@@ -19,8 +19,8 @@ resource "aws_vpc" "final_more_vpc" {
 }
 
 # Primary public subnet for ALB (Availability Zone A)
-resource "aws_subnet" "final_more_pub_subnet_a" {
-  vpc_id                  = aws_vpc.final_more_vpc.id
+resource "aws_subnet" "finalmore_pub_subnet_a" {
+  vpc_id                  = aws_vpc.finalmore_vpc.id
   cidr_block              = "10.0.1.0/24"
   availability_zone       = var.availability_zone
   map_public_ip_on_launch = true
@@ -31,8 +31,8 @@ resource "aws_subnet" "final_more_pub_subnet_a" {
 }
 
 # Second public subnet for ALB (Availability Zone B)
-resource "aws_subnet" "final_more_pub_subnet_b" {
-  vpc_id                  = aws_vpc.final_more_vpc.id
+resource "aws_subnet" "finalmore_pub_subnet_b" {
+  vpc_id                  = aws_vpc.finalmore_vpc.id
   cidr_block              = "10.0.3.0/24"  # Ensure this CIDR block does not overlap with others
   availability_zone       = var.availability_zone_b
   map_public_ip_on_launch = true
@@ -43,8 +43,8 @@ resource "aws_subnet" "final_more_pub_subnet_b" {
 }
 
 # Private subnet for ECS tasks
-resource "aws_subnet" "final_more_priv_subnet" {
-  vpc_id            = aws_vpc.final_more_vpc.id
+resource "aws_subnet" "finalmore_priv_subnet" {
+  vpc_id            = aws_vpc.finalmore_vpc.id
   cidr_block        = "10.0.2.0/24"
   availability_zone = var.availability_zone
 
@@ -54,8 +54,8 @@ resource "aws_subnet" "final_more_priv_subnet" {
 }
 
 # Internet Gateway for public subnets
-resource "aws_internet_gateway" "final_more_igw" {
-  vpc_id = aws_vpc.final_more_vpc.id
+resource "aws_internet_gateway" "finalmore_igw" {
+  vpc_id = aws_vpc.finalmore_vpc.id
 
   tags = {
     Name = "final-more-igw"
@@ -63,12 +63,12 @@ resource "aws_internet_gateway" "final_more_igw" {
 }
 
 # Route Table for public subnets
-resource "aws_route_table" "final_more_pub_rt" {
-  vpc_id = aws_vpc.final_more_vpc.id
+resource "aws_route_table" "finalmore_pub_rt" {
+  vpc_id = aws_vpc.finalmore_vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.final_more_igw.id
+    gateway_id = aws_internet_gateway.finalmore_igw.id
   }
 
   tags = {
@@ -76,24 +76,24 @@ resource "aws_route_table" "final_more_pub_rt" {
   }
 }
 
-resource "aws_route_table_association" "final_more_pub_assoc_a" {
-  subnet_id      = aws_subnet.final_more_pub_subnet_a.id
-  route_table_id = aws_route_table.final_more_pub_rt.id
+resource "aws_route_table_association" "finalmore_pub_assoc_a" {
+  subnet_id      = aws_subnet.finalmore_pub_subnet_a.id
+  route_table_id = aws_route_table.finalmore_pub_rt.id
 }
 
-resource "aws_route_table_association" "final_more_pub_assoc_b" {
-  subnet_id      = aws_subnet.final_more_pub_subnet_b.id
-  route_table_id = aws_route_table.final_more_pub_rt.id
+resource "aws_route_table_association" "finalmore_pub_assoc_b" {
+  subnet_id      = aws_subnet.finalmore_pub_subnet_b.id
+  route_table_id = aws_route_table.finalmore_pub_rt.id
 }
 
 ###############################################################################
 # Section 3: Security Groups
 ###############################################################################
 # Security Group for ALB – allows HTTP inbound
-resource "aws_security_group" "final_more_alb_sg" {
+resource "aws_security_group" "finalmore_alb_sg" {
   name        = "final-more-alb-sg"
   description = "Security group for ALB"
-  vpc_id      = aws_vpc.final_more_vpc.id
+  vpc_id      = aws_vpc.finalmore_vpc.id
 
   ingress {
     description = "Allow HTTP inbound"
@@ -117,17 +117,17 @@ resource "aws_security_group" "final_more_alb_sg" {
 }
 
 # Security Group for ECS tasks – restrict inbound to only traffic from ALB on port 5000
-resource "aws_security_group" "final_more_ecs_sg" {
+resource "aws_security_group" "finalmore_ecs_sg" {
   name        = "final-more-ecs-sg"
   description = "Security group for ECS tasks (Fargate)"
-  vpc_id      = aws_vpc.final_more_vpc.id
+  vpc_id      = aws_vpc.finalmore_vpc.id
 
   ingress {
     description     = "Allow inbound from ALB on port 5000"
     from_port       = 5000
     to_port         = 5000
     protocol        = "tcp"
-    security_groups = [aws_security_group.final_more_alb_sg.id]
+    security_groups = [aws_security_group.finalmore_alb_sg.id]
   }
 
   egress {
@@ -146,22 +146,22 @@ resource "aws_security_group" "final_more_ecs_sg" {
 ###############################################################################
 # Section 4: Application Load Balancer & Target Group
 ###############################################################################
-resource "aws_lb" "final_more_alb" {
+resource "aws_lb" "finalmore_alb" {
   name               = "final-more-alb"
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.final_more_alb_sg.id]
-  subnets            = [aws_subnet.final_more_pub_subnet_a.id, aws_subnet.final_more_pub_subnet_b.id]
+  security_groups    = [aws_security_group.finalmore_alb_sg.id]
+  subnets            = [aws_subnet.finalmore_pub_subnet_a.id, aws_subnet.finalmore_pub_subnet_b.id]
 
   tags = {
     Name = "final-more-alb"
   }
 }
 
-resource "aws_lb_target_group" "final_more_tg" {
+resource "aws_lb_target_group" "finalmore_tg" {
   name        = "final-more-tg"
   port        = 5000
   protocol    = "HTTP"
-  vpc_id      = aws_vpc.final_more_vpc.id
+  vpc_id      = aws_vpc.finalmore_vpc.id
   target_type = "ip"    # Required for awsvpc mode
 
   health_check {
@@ -178,14 +178,14 @@ resource "aws_lb_target_group" "final_more_tg" {
   }
 }
 
-resource "aws_lb_listener" "final_more_listener" {
-  load_balancer_arn = aws_lb.final_more_alb.arn
+resource "aws_lb_listener" "finalmore_listener" {
+  load_balancer_arn = aws_lb.finalmore_alb.arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.final_more_tg.arn
+    target_group_arn = aws_lb_target_group.finalmore_tg.arn
   }
 
   tags = {
@@ -197,8 +197,8 @@ resource "aws_lb_listener" "final_more_listener" {
 # Section 5: IAM Roles
 ###############################################################################
 # Create ECS Task Role (import if it already exists)
-resource "aws_iam_role" "final_more_ecs_task_role" {
-  name = "final-more-ecs-task-role"
+resource "aws_iam_role" "finalmore_ecs_task_role_new" {
+  name = "final-more-ecs-task-role_new"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -212,14 +212,14 @@ resource "aws_iam_role" "final_more_ecs_task_role" {
   })
 
   tags = {
-    Name = "final-more-ecs-task-role"
+    Name = "final-more-ecs-task-role-new"
   }
 }
 
 ###############################################################################
 # Section 6: ECS Cluster, Task Definition, and Service (Fargate)
 ###############################################################################
-resource "aws_ecs_cluster" "final_more_ecs_cluster" {
+resource "aws_ecs_cluster" "finalmore_ecs_cluster" {
   name = "final-more-ecs-cluster"
 
   tags = {
@@ -228,7 +228,7 @@ resource "aws_ecs_cluster" "final_more_ecs_cluster" {
 }
 
 # Reference the externally created ECR repository using a variable for the image URI.
-resource "aws_ecs_task_definition" "final_more_task_def" {
+resource "aws_ecs_task_definition" "finalmore_task_def" {
   family                   = "final-more-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
@@ -257,28 +257,28 @@ resource "aws_ecs_task_definition" "final_more_task_def" {
   ])
 
   execution_role_arn = var.ecs_execution_role_arn
-  task_role_arn      = aws_iam_role.final_more_ecs_task_role.arn
+  task_role_arn      = aws_iam_role.finalmore_ecs_task_role_new.arn
 
   tags = {
     Name = "final-more-task-def"
   }
 }
 
-resource "aws_ecs_service" "final_more_ecs_service" {
+resource "aws_ecs_service" "finalmore_ecs_service" {
   name            = "final-more-ecs-service"
-  cluster         = aws_ecs_cluster.final_more_ecs_cluster.id
-  task_definition = aws_ecs_task_definition.final_more_task_def.arn
+  cluster         = aws_ecs_cluster.finalmore_ecs_cluster.id
+  task_definition = aws_ecs_task_definition.finalmore_task_def.arn
   launch_type     = "FARGATE"
   desired_count   = 2
 
   network_configuration {
-    subnets         = [aws_subnet.final_more_priv_subnet.id]
-    security_groups = [aws_security_group.final_more_ecs_sg.id]
+    subnets         = [aws_subnet.finalmore_priv_subnet.id]
+    security_groups = [aws_security_group.finalmore_ecs_sg.id]
     assign_public_ip = false
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.final_more_tg.arn
+    target_group_arn = aws_lb_target_group.finalmore_tg.arn
     container_name   = "final-api-container"
     container_port   = 5000
   }
@@ -286,7 +286,7 @@ resource "aws_ecs_service" "final_more_ecs_service" {
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
 
-  depends_on = [aws_lb_listener.final_more_listener]
+  depends_on = [aws_lb_listener.finalmore_listener]
 
   tags = {
     Name = "final-more-ecs-service"
@@ -296,20 +296,20 @@ resource "aws_ecs_service" "final_more_ecs_service" {
 ###############################################################################
 # Section 7: Autoscaling for ECS Service
 ###############################################################################
-resource "aws_appautoscaling_target" "final_more_ecs_asg_target" {
+resource "aws_appautoscaling_target" "finalmore_ecs_asg_target" {
   service_namespace  = "ecs"
-  resource_id        = "service/${aws_ecs_cluster.final_more_ecs_cluster.name}/${aws_ecs_service.final_more_ecs_service.name}"
+  resource_id        = "service/${aws_ecs_cluster.finalmore_ecs_cluster.name}/${aws_ecs_service.finalmore_ecs_service.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   min_capacity       = 2
   max_capacity       = 5
 }
 
-resource "aws_appautoscaling_policy" "final_more_ecs_asg_scale_out" {
+resource "aws_appautoscaling_policy" "finalmore_ecs_asg_scale_out" {
   name               = "final-more-ecs-scale-out"
   policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.final_more_ecs_asg_target.resource_id
-  scalable_dimension = aws_appautoscaling_target.final_more_ecs_asg_target.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.final_more_ecs_asg_target.service_namespace
+  resource_id        = aws_appautoscaling_target.finalmore_ecs_asg_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.finalmore_ecs_asg_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.finalmore_ecs_asg_target.service_namespace
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
@@ -321,12 +321,12 @@ resource "aws_appautoscaling_policy" "final_more_ecs_asg_scale_out" {
   }
 }
 
-resource "aws_appautoscaling_policy" "final_more_ecs_asg_scale_in" {
+resource "aws_appautoscaling_policy" "finalmore_ecs_asg_scale_in" {
   name               = "final-more-ecs-scale-in"
   policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.final_more_ecs_asg_target.resource_id
-  scalable_dimension = aws_appautoscaling_target.final_more_ecs_asg_target.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.final_more_ecs_asg_target.service_namespace
+  resource_id        = aws_appautoscaling_target.finalmore_ecs_asg_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.finalmore_ecs_asg_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.finalmore_ecs_asg_target.service_namespace
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
