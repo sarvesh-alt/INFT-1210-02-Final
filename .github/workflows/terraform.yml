@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main  # Adjust branch name if needed
+      - main  # Adjust branch name as needed
 
 jobs:
   source:
@@ -28,14 +28,26 @@ jobs:
     runs-on: ubuntu-latest
     needs: source
     steps:
-      # Use download-artifact@v4.2.1 as requested
-      - name: Download a Build Artifact
-        uses: actions/download-artifact@v4.2.1
+      - name: Download Source Artifact
+        uses: actions/download-artifact@v4.6.2
         with:
           name: source-code
 
       - name: Set Up Docker Buildx
         uses: docker/setup-buildx-action@v2
+
+      # Configure AWS Credentials using the aws-actions action.
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      # Since the ECR repository is created by Terraform later, ensure it exists in the build stage.
+      - name: Ensure ECR Repository Exists
+        run: |
+          aws ecr describe-repositories --repository-names more-final-api --region ca-central-1 || aws ecr create-repository --repository-name more-final-api --region ca-central-1
 
       - name: Login to AWS ECR
         env:
@@ -71,8 +83,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Download a Build Artifact
-        uses: actions/download-artifact@v4.2.1
+      - name: Download Source Artifact
+        uses: actions/download-artifact@v4.6.2
         with:
           name: source-code
 
@@ -82,7 +94,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: "1.0.11"  # Adjust version as needed
+          terraform_version: "1.0.11"  # Adjust if needed
       
       - name: Terraform Validate
         env:
