@@ -1,0 +1,23 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - aws --version
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 615299769322.dkr.ecr.us.east.1.amazonaws.com
+      - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+      - IMAGE_URI="615299769322.dkr.ecr.us.east-1.amazonaws.com/flask-app-repo-more:latest"
+  build:
+    commands:
+      - echo Build started on 'date'
+      - echo Building the Docker image...
+      - docker build --tag "$IMAGE_URI" .
+  post_build:
+    commands:
+      - echo Build comleted on 'date'
+      - echo Pushing the Docker images...
+      - docker push "$IMAGE_URI"
+      - echo Writing image definintions file...
+      - printf '[{"name":"FrontendContainer","imageUri":"%s"}]' "$IMAGE_URI" > imagedef.json
+artifacts:
+  files: imagedef.json

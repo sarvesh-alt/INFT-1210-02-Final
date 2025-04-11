@@ -1,22 +1,17 @@
-# Use an official Python runtime as a parent image
+# Use the appropriate Python version
 FROM python:3.9-slim
 
-# Prevent Python from writing .pyc files and enable unbuffered output
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
-# Copy requirements.txt and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy application code
+COPY . /app
 
-# Copy the rest of your application code
-COPY . .
+# Install dependencies
+RUN pip install --no-cache-dir flask gunicorn
 
-# Expose port 5000 for the Flask app
-EXPOSE 5000
+# Expose port
+EXPOSE 80
 
-# Run the Flask application using Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+# Run the application using Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:80", "app:app"]
