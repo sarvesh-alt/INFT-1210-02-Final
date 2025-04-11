@@ -33,7 +33,7 @@ resource "aws_subnet" "final_more_pub_subnet_a" {
 # Second public subnet for ALB (Availability Zone B)
 resource "aws_subnet" "final_more_pub_subnet_b" {
   vpc_id                  = aws_vpc.final_more_vpc.id
-  cidr_block              = "10.0.3.0/24"  # Ensure CIDR blocks do not overlap within the VPC.
+  cidr_block              = "10.0.3.0/24"  # Ensure this CIDR block does not overlap with others
   availability_zone       = var.availability_zone_b
   map_public_ip_on_launch = true
 
@@ -158,10 +158,11 @@ resource "aws_lb" "final_more_alb" {
 }
 
 resource "aws_lb_target_group" "final_more_tg" {
-  name     = "final-more-tg"
-  port     = 5000
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.final_more_vpc.id
+  name        = "final-more-tg"
+  port        = 5000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.final_more_vpc.id
+  target_type = "ip"    # Required for awsvpc mode
 
   health_check {
     healthy_threshold   = 2
@@ -226,13 +227,13 @@ resource "aws_ecs_cluster" "final_more_ecs_cluster" {
   }
 }
 
-# Since the ECR repository is created externally, the ECS task definition references the image URI from a variable.
+# Reference the externally created ECR repository using a variable for the image URI.
 resource "aws_ecs_task_definition" "final_more_task_def" {
   family                   = "final-more-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"  # 0.25 vCPU
-  memory                   = "512"  # 512 MB
+  cpu                      = "256"   # 0.25 vCPU
+  memory                   = "512"   # 512 MB
 
   container_definitions = jsonencode([
     {
@@ -248,7 +249,8 @@ resource "aws_ecs_task_definition" "final_more_task_def" {
       environment = [
         {
           name  = "WELCOME_MESSAGE",
-          value = "Welcome to More Final Test API Server"
+          value = "Welcome to final More Final Test API Server"
+          # Adjust the text as required. In this example, the welcome message uses "final More".
         }
       ]
     }
