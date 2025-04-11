@@ -197,8 +197,8 @@ resource "aws_lb_listener" "finalmore_listener" {
 # Section 5: IAM Roles
 ###############################################################################
 # Create ECS Task Role (import if it already exists)
-resource "aws_iam_role" "finalmore_ecs_task_role_new" {
-  name = "final-more-ecs-task-role_new"
+resource "aws_iam_role" "finalmore_ecs_task_role_new1" {
+  name = "final-more-ecs-task-role_new1"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -212,7 +212,7 @@ resource "aws_iam_role" "finalmore_ecs_task_role_new" {
   })
 
   tags = {
-    Name = "final-more-ecs-task-role-new"
+    Name = "final-more-ecs-task-role-new1"
   }
 }
 
@@ -257,7 +257,7 @@ resource "aws_ecs_task_definition" "finalmore_task_def" {
   ])
 
   execution_role_arn = var.ecs_execution_role_arn
-  task_role_arn      = aws_iam_role.finalmore_ecs_task_role_new.arn
+  task_role_arn      = aws_iam_role.finalmore_ecs_task_role_new1.arn
 
   tags = {
     Name = "final-more-task-def"
